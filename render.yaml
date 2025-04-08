@@ -4,17 +4,15 @@
 services:
   # 1. Base de Datos PostgreSQL para Genisthis (datos internos de n8n)
   - type: pserv # Servicio Privado (Base de Datos)
-    # Nombre actualizado para claridad: proyecto-n8n-recurso
-    name: genisthis-n8n-postgres
+    name: genisthis-n8n-postgres # Nombre actualizado para claridad: proyecto-n8n-recurso
     region: us-east-1 # Región N. Virginia (recomendada)
     plan: free # Plan gratuito inicial
-    disk:
-      sizeGB: 1 # Tamaño del disco para el plan gratuito de la BD
+    postgresMajorVersion: 15 # Versión de PostgreSQL
+    # La sección 'disk:' fue eliminada porque NO es compatible con plan: free
 
   # 2. Servicio Web para n8n (instancia principal de Genisthis)
   - type: web # Servicio Web
-    # Nombre actualizado para claridad: proyecto-n8n-recurso
-    name: genisthis-n8n-web
+    name: genisthis-n8n-web # Nombre actualizado para claridad: proyecto-n8n-recurso
     region: us-east-1 # Misma región que la base de datos
     plan: free # Plan gratuito inicial (considera 'starter' para producción)
     healthCheckPath: /healthz # Ruta para verificación de salud de n8n
@@ -44,8 +42,10 @@ services:
           envVarKey: RENDER_EXTERNAL_URL # Render genera esta variable automáticamente
 
       # --- Variables Secretas (usando un Grupo de Variables de Entorno) ---
-      # !! IMPORTANTE: Debes crear un 'Environment Group' llamado 'genisthis-n8n-secrets'
-      # !! (¡nombre actualizado!) en el dashboard de Render y añadir tu N8N_ENCRYPTION_KEY allí.
+      # !! MUY IMPORTANTE: Debes crear un 'Environment Group' llamado 'genisthis-n8n-secrets'
+      # !! en el dashboard de Render ANTES de desplegar. Este grupo DEBE contener al menos
+      # !! la variable N8N_ENCRYPTION_KEY con una clave segura que generes.
+      # !! Si este grupo no existe o está vacío, el despliegue puede fallar con errores de validación.
       - group: genisthis-n8n-secrets # Nombre del grupo que crearás en Render (actualizado)
 
       # Nota: La N8N_ENCRYPTION_KEY es *obligatoria*. Ponla en el grupo 'genisthis-n8n-secrets'.
