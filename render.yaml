@@ -1,65 +1,52 @@
-# Use this Blueprint to deploy n8n on Render as a web
-# service that uses a Postgres database to store
-# workflow data.
-#
-# This Blueprint uses free instance types (specified by
-# `plan`) for both the web service and the database. You
-# can upgrade to paid instance types at any time to
-# increase resources.
+# render.yaml para el proyecto Genisthis
+# Definición de servicios para desplegar n8n en Render
 
 services:
-  - type: web
-    plan: free
-    # This is the runtime for services that pull a prebuilt Docker image
-    runtime: image
-    # You can give the service any name
-    name: n8n-service
+  # 1. Base de Datos PostgreSQL para Genisthis (datos internos de n8n)
+  - type: pserv # Servicio Privado (Base de Datos)
+    # Nombre actualizado para claridad: proyecto-n8n-recurso
+    name: genisthis-n8n-postgres
+    region: us-east-1 # Región N. Virginia (recomendada)
+    plan: free # Plan gratuito inicial
+    postgresMajorVersion: 15 # Versión de PostgreSQL
+    disk:
+      sizeGB: 1 # Tamaño del disco para el plan gratuito de la BD
+
+  # 2. Servicio Web para n8n (instancia principal de Genisthis)
+  - type: web # Servicio Web
+    # Nombre actualizado para claridad: proyecto-n8n-recurso
+    name: genisthis-n8n-web
+    region: us-east-1 # Misma región que la base de datos
+    plan: free # Plan gratuito inicial (considera 'starter' para producción)
+    healthCheckPath: /healthz # Ruta para verificación de salud de n8n
     image:
-      # Pulls the n8n image tagged as latest from Docker Hub
-      url: docker.io/n8nio/n8n:latest
-
-    # All environment variables defined below are required!
-    #
-    # You can define additional environment variables as needed.
+      url: n8nio/n8n:latest # Imagen oficial de n8n (puede fijar una versión: n8nio/n8n:1.2.3)
     envVars:
-      # Generates a base64-encoded key for
-      # encrypting credentials in n8n
-      #
-      # Do not modify this value after it's generated!
-      # If you do, you'll lose access to all credentials
-      # encrypted with the previous value.
-      - key: N8N_ENCRYPTION_KEY
-        generateValue: true
-
-      # These automatically populate connection details 
-      # for the Render Postgres database defined below
+      # --- Conexión a la Base de Datos ---
       - key: DB_TYPE
         value: postgresdb
-      - key: DB_POSTGRESDB_DATABASE
-        fromDatabase:
-          name: n8n-db
-          property: database
-      - key: DB_POSTGRESDB_HOST
-        fromDatabase:
-          name: n8n-db
-          property: host
-      - key: DB_POSTGRESDB_PASSWORD
-        fromDatabase:
-          name: n8n-db
-          property: password
-      - key: DB_POSTGRESDB_USER
-        fromDatabase:
-          name: n8n-db
-          property: user
+      - key: DATABASE_URL
+        fromService:
+          type: pserv
+          # !! Asegúrate que 'name' coincide con tu servicio de BD actualizado !!
+          name: genisthis-n8n-postgres
+          envVarKey: DATABASE_URL # Render genera esta variable automáticamente
 
-databases:
-  - name: n8n-db
-    plan: free
-    # The free instance type is limited to 1 GB of disk
-    # space.
-    #
-    # If you later upgrade to a paid instance type, you can
-    # increase the disk size to any multiple of 5 GB by
-    # setting the `diskSizeGB` property.
-    #
-    # diskSizeGB: 5
+      # --- Configuración General de n8n ---
+      - key: GENERIC_TIMEZONE
+        # !! Zona horaria ajustada para el público principal (Brasil - São Paulo) !!
+        # Esto afecta cómo se interpretan las programaciones (cron) y cómo se muestran las horas en la UI de n8n.
+        value: America/Sao_Paulo
+      - key: WEBHOOK_URL
+        fromService:
+          type: web
+          # !! Asegúrate que 'name' coincide con este servicio web actualizado !!
+          name: genisthis-n8n-web
+          envVarKey: RENDER_EXTERNAL_URL # Render genera esta variable automáticamente
+
+      # --- Variables Secretas (usando un Grupo de Variables de Entorno) ---
+      # !! IMPORTANTE: Debes crear un 'Environment Group' llamado 'genisthis-n8n-secrets'
+      # !! (¡nombre actualizado!) en el dashboard de Render y añadir tu N8N_ENCRYPTION_KEY allí.
+      - group: genisthis-n8n-secrets # Nombre del grupo que crearás en Render (actualizado)
+
+      # Nota: La N8N_ENCRYPTION_KEY es *obligatoria*. Ponla en el grupo 'genisthis-n8n-secrets'.
