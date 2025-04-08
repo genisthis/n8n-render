@@ -8,7 +8,6 @@ services:
     name: genisthis-n8n-postgres
     region: us-east-1 # Región N. Virginia (recomendada)
     plan: free # Plan gratuito inicial
-    postgresMajorVersion: 15 # Versión de PostgreSQL
     disk:
       sizeGB: 1 # Tamaño del disco para el plan gratuito de la BD
 
