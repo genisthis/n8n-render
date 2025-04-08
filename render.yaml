@@ -7,8 +7,6 @@ services:
     name: genisthis-n8n-postgres # Nombre actualizado para claridad: proyecto-n8n-recurso
     region: us-east-1 # Región N. Virginia (recomendada)
     plan: free # Plan gratuito inicial
-    postgresMajorVersion: 15 # Versión de PostgreSQL
-    # La sección 'disk:' fue eliminada porque NO es compatible con plan: free
 
   # 2. Servicio Web para n8n (instancia principal de Genisthis)
   - type: web # Servicio Web
